@@ -1,0 +1,69 @@
+name: Build PDF and Publish Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate PDF via Docker
+        run: |
+          mkdir -p output
+          echo "Running PDF generation via Docker..."
+          
+          # Use the latest tag we just built and pushed
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace/project \
+            -v ${{ github.workspace }}/output:/workspace/output \
+            -e OUTPUT_FILENAME=Technical_Documentation.pdf \
+            -e PDF_TITLE="Project Architecture & API" \
+            -e PDF_SUBTITLE="Confidential Technical Reference" \
+            -e PDF_AUTHOR="Engineering Team" \
+            -e PDF_COPYRIGHT="© 2026 MyCompany Inc." \
+            $IMAGE_TAG
+
+      - name: Upload PDF Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Documentation
+          path: output/Technical_Documentation.pdf

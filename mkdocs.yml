@@ -1,0 +1,46 @@
+site_name: wiki-to-pdf
+site_author: Amardeep Shetty
+copyright: "© 2026 <>"
+
+theme:
+  name: material
+  palette:
+    scheme: default
+
+nav:
+  - "Introduction": index.md
+  - "Setup": setup.md
+  - "Usage": usage.md
+  - "Architecture": architecture.md
+  - "CI/CD Integration": ci-cd.md
+
+markdown_extensions:
+  - tables
+  - fenced_code
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: false
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search
+  - to-pdf:
+      output_path: pdf/wiki-to-pdf-documentation.pdf
+      cover: true
+      cover_title: "wiki-to-pdf"
+      cover_subtitle: "User Guide & Documentation"
+      author: "Amardeep Shetty"
+      copyright: "© 2026 <>"
+      toc_title: "Table of Contents"
+      toc_level: 3
+      heading_shift: true
+      ordered_chapter_level: 3
+      custom_template_path: templates
+      verbose: false

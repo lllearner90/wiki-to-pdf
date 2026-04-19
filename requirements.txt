@@ -1,0 +1,5 @@
+wiki-to-pdf==0.10.1
+mkdocs-material>=9.5
+mkdocs-mermaid2-plugin>=1.2
+pymdown-extensions>=10.0
+PyYAML>=6.0

@@ -1,0 +1,34 @@
+<article id="doc-cover">
+    {% if cover_logo is defined and cover_logo %}
+        <div class="cover-page">
+            <div class="cover-content">
+                <img src="{{ cover_logo | to_url }}" class="cover-logo" />
+                <h1 class="cover-title">{{ cover_title | e }}</h1>
+                {% if cover_subtitle is defined %}
+                <p class="cover-subtitle">{{ cover_subtitle | e }}</p>
+                {% endif %}
+                {% if author is defined %}
+                <p class="cover-author">{{ author | e }}</p>
+                {% endif %}
+                {% if copyright is defined %}
+                <p class="cover-copyright">{{ copyright | e }}</p>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="cover-page">
+            <div class="cover-content">
+                <h1 class="cover-title">{{ cover_title | e }}</h1>
+                {% if cover_subtitle is defined %}
+                <p class="cover-subtitle">{{ cover_subtitle | e }}</p>
+                {% endif %}
+                {% if author is defined %}
+                <p class="cover-author">{{ author | e }}</p>
+                {% endif %}
+                {% if copyright is defined %}
+                <p class="cover-copyright">{{ copyright | e }}</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</article>

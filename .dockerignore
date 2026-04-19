@@ -1,0 +1,8 @@
+.venv/
+site/
+pdf/
+__pycache__/
+*.pyc
+.git/
+.DS_Store
+*.pdf

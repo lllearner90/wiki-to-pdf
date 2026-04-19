@@ -1,0 +1,51 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # ACR Configuration
+  # Replace 'your-acr-service-connection' with your actual Azure Resource Manager service connection name
+  dockerRegistryServiceConnection: 'your-acr-service-connection'
+  # Replace 'yourregistry.azurecr.io' with your actual ACR login server
+  containerRegistry: 'yourregistry.azurecr.io'
+  imageRepository: 'wiki-to-pdf'
+  tag: '$(Build.BuildId)'
+  
+  # Directory containing mkdocs.yml and docs
+  PROJECT_DIR: '$(System.DefaultWorkingDirectory)'
+  
+  # Directory where the generated PDF will be placed
+  OUTPUT_DIR: '$(System.DefaultWorkingDirectory)/output'
+  
+  # Name of the output PDF file
+  PDF_FILENAME: 'Technical_Documentation.pdf'
+
+steps:
+  - checkout: self
+
+  - task: Docker@2
+    displayName: 'Build and push wiki-to-pdf Docker image to ACR'
+    inputs:
+      command: 'buildAndPush'
+      repository: '$(imageRepository)'
+      Dockerfile: '**/Dockerfile'
+      containerRegistry: '$(dockerRegistryServiceConnection)'
+      tags: |
+        $(tag)
+        latest
+
+  - script: |
+      mkdir -p $(OUTPUT_DIR)
+      echo "Running PDF generation via Docker..."
+      
+      docker run --rm         -v $(PROJECT_DIR):/workspace/project         -v $(OUTPUT_DIR):/workspace/output         -e OUTPUT_FILENAME=$(PDF_FILENAME)         -e PDF_TITLE="Project Architecture & API"         -e PDF_SUBTITLE="Confidential Technical Reference"         -e PDF_AUTHOR="Engineering Team"         -e PDF_COPYRIGHT="© 2026 MyCompany Inc."         $(containerRegistry)/$(imageRepository):latest
+    displayName: 'Generate PDF from Markdown'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish PDF as Pipeline Artifact'
+    inputs:
+      targetPath: '$(OUTPUT_DIR)/$(PDF_FILENAME)'
+      artifactName: 'Documentation'
+      publishLocation: 'pipeline'

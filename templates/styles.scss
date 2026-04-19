@@ -1,0 +1,383 @@
+/* ===== Markdown Preview Enhanced - Style ===== */
+
+/* Page Setup */
+@page {
+    size: A4;
+    margin: 25mm 20mm 25mm 20mm;
+
+    @bottom-center {
+        content: counter(page);
+        font-size: 10px;
+        color: #666;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+}
+
+@page :first {
+    @bottom-center {
+        content: "";
+    }
+}
+
+/* Cover Page */
+.cover-page {
+    page-break-after: always;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+}
+
+.cover-content {
+    padding: 60px;
+}
+
+.cover-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+    border: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.cover-subtitle {
+    font-size: 22px;
+    color: #666;
+    margin-bottom: 40px;
+}
+
+.cover-author {
+    font-size: 16px;
+    color: #888;
+    margin-top: 60px;
+}
+
+.cover-copyright {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 10px;
+}
+
+.cover-logo {
+    max-width: 200px;
+    margin-bottom: 40px;
+}
+
+/* ===== Body / Typography - Matching MPE GitHub Style ===== */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 14px;
+    line-height: 1.6;
+    color: #24292e;
+    word-wrap: break-word;
+}
+
+/* Chapter headings (page breaks) */
+article, .chapter {
+    page-break-before: always;
+}
+
+article:first-of-type {
+    page-break-before: avoid;
+}
+
+/* Headings - GitHub/MPE style */
+h1 {
+    font-size: 2em;
+    font-weight: 600;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #eaecef;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.25;
+    color: #24292e;
+}
+
+h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #eaecef;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.25;
+    color: #24292e;
+}
+
+h3 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.25;
+    color: #24292e;
+}
+
+h4 {
+    font-size: 1em;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.25;
+    color: #24292e;
+}
+
+h5, h6 {
+    font-size: 0.875em;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.25;
+    color: #6a737d;
+}
+
+/* Paragraphs */
+p {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+/* Links */
+a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Strong / Bold */
+strong {
+    font-weight: 600;
+}
+
+/* Code - Inline */
+code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 85%;
+    padding: 0.2em 0.4em;
+    margin: 0;
+    background-color: rgba(27, 31, 35, 0.05);
+    border-radius: 3px;
+    color: #24292e;
+}
+
+/* Code - Block */
+pre {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    margin-top: 0;
+    margin-bottom: 16px;
+    word-wrap: normal;
+    border: 1px solid #e1e4e8;
+}
+
+pre code {
+    font-size: 100%;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    border: 0;
+    display: inline;
+    overflow: visible;
+    line-height: inherit;
+    word-wrap: normal;
+}
+
+/* Syntax highlighting colors (GitHub-like) */
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kt {
+    color: #d73a49;
+}
+.highlight .s, .highlight .s1, .highlight .s2, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .sh, .highlight .sx {
+    color: #032f62;
+}
+.highlight .c, .highlight .c1, .highlight .cm, .highlight .cp {
+    color: #6a737d;
+}
+.highlight .na, .highlight .nb {
+    color: #005cc5;
+}
+.highlight .nf, .highlight .nx {
+    color: #6f42c1;
+}
+.highlight .mi, .highlight .mf, .highlight .mh, .highlight .mo {
+    color: #005cc5;
+}
+
+/* Blockquotes */
+blockquote {
+    margin: 0 0 16px 0;
+    padding: 0 1em;
+    color: #6a737d;
+    border-left: 0.25em solid #dfe2e5;
+}
+
+blockquote p {
+    margin-bottom: 0;
+}
+
+/* Lists */
+ul, ol {
+    padding-left: 2em;
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+ul ul, ul ol, ol ol, ol ul {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+li {
+    margin-top: 0.25em;
+}
+
+li + li {
+    margin-top: 0.25em;
+}
+
+/* Tables - GitHub style */
+table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin-top: 0;
+    margin-bottom: 16px;
+    width: auto;
+    overflow: auto;
+    display: table;
+    font-size: 13px;
+}
+
+table th {
+    font-weight: 600;
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+    background-color: #f6f8fa;
+}
+
+table td {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+}
+
+table tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+/* Horizontal Rules */
+hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e1e4e8;
+    border: 0;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    box-sizing: border-box;
+    border-style: none;
+}
+
+/* Task Lists */
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item input {
+    margin-right: 0.5em;
+}
+
+/* Table of Contents */
+.toc-page {
+    page-break-after: always;
+}
+
+.toc-title {
+    font-size: 2em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #eaecef;
+}
+
+.toc ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.toc ul ul {
+    padding-left: 1.5em;
+}
+
+.toc li {
+    margin: 6px 0;
+    line-height: 1.4;
+}
+
+.toc a {
+    color: #0366d6;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.toc a:hover {
+    text-decoration: underline;
+}
+
+/* Mermaid diagrams */
+.mermaid {
+    text-align: center;
+    margin: 16px 0;
+}
+
+.mermaid svg {
+    max-width: 100%;
+}
+
+/* Print optimizations */
+@media print {
+    body {
+        color: #24292e;
+    }
+
+    pre, code {
+        page-break-inside: avoid;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+    }
+
+    img {
+        page-break-inside: avoid;
+    }
+}
+
+/* Chapter number styling */
+.chapter-number {
+    font-size: 0.85em;
+    color: #6a737d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    display: block;
+}
