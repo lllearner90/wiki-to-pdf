@@ -10,9 +10,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpango1.0-dev \
-    libcairo2-dev \
-    libgdk-pixbuf2.0-dev \
-    libffi-dev \
     shared-mime-info \
     fonts-liberation \
     fonts-dejavu-core \
@@ -33,6 +30,7 @@ RUN npm install -g @mermaid-js/mermaid-cli
 # Tell puppeteer to use system Chromium instead of downloading its own
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_CONFIG=/root/.puppeteerrc.json
 ENV CHROMIUM_FLAGS="--no-sandbox --disable-gpu --disable-dev-shm-usage"
 
 # Puppeteer config so mmdc uses system Chromium with required flags
@@ -56,9 +54,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libcairo2 \
-    libgdk-pixbuf2.0-0 \
-    libffi8 \
     shared-mime-info \
     fonts-liberation \
     fonts-dejavu-core \
@@ -78,13 +73,14 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy global node_modules (mmdc) from builder
 COPY --from=builder /usr/lib/node_modules /usr/lib/node_modules
-COPY --from=builder /usr/bin/mmdc /usr/bin/mmdc 2>/dev/null || true
+
 RUN ln -sf /usr/lib/node_modules/@mermaid-js/mermaid-cli/src/cli.js /usr/local/bin/mmdc \
     && chmod +x /usr/local/bin/mmdc 2>/dev/null || true
 
 # Puppeteer / Chromium config
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_CONFIG=/root/.puppeteerrc.json
 COPY --from=builder /root/.puppeteerrc.json /root/.puppeteerrc.json
 
 # ---- Application code ----
