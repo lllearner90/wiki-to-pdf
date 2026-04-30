@@ -187,11 +187,18 @@ def main():
     
     parser.add_argument('--version-table', default=None,
                         help='Path to a YAML/JSON file with version history entries for the PDF cover')
+    parser.add_argument('--version-from-git', action='store_true', default=False,
+                        help='Auto-generate version table from git tags and commit log')
+    parser.add_argument('--version-max-commits', type=int, default=20,
+                        help='Max commits per version when using --version-from-git (default: 20)')
+    parser.add_argument('--version-exclude-pattern', default=None,
+                        help='Regex to exclude commits (e.g. "^Merge") with --version-from-git')
     parser.add_argument('--keep-temp', action='store_true',
                         help='Keep temporary working directory')
     args = parser.parse_args()
 
-    project_dir = os.path.dirname(os.path.abspath(__file__))
+    # project_dir is now the root (one level up from src/)
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     config_path = os.path.abspath(args.config)
 
     if not os.path.isfile(config_path):
@@ -305,7 +312,10 @@ def main():
     if 'extra' not in config:
         config['extra'] = {}
 
+    # Precedence: --version-table (explicit file) > --version-from-git (auto)
     version_table_file = args.version_table or os.environ.get('VERSION_TABLE')
+    use_git = args.version_from_git or os.environ.get('VERSION_FROM_GIT', '').lower() in ('1', 'true', 'yes')
+
     if version_table_file:
         vt_path = os.path.abspath(version_table_file)
         if os.path.isfile(vt_path):
@@ -323,6 +333,31 @@ def main():
                       file=sys.stderr)
         else:
             print(f"Warning: Version table file not found: {vt_path}",
+                  file=sys.stderr)
+    elif use_git:
+        print("Generating version table from git history...")
+        try:
+            from generate_version_table import build_version_table, is_git_repo
+            if is_git_repo():
+                exclude = args.version_exclude_pattern or os.environ.get('VERSION_EXCLUDE_PATTERN')
+                entries = build_version_table(
+                    max_commits=args.version_max_commits,
+                    exclude_pattern=exclude,
+                    include_unreleased=True,
+                )
+                if entries:
+                    config['extra']['version_table'] = entries
+                    print(f"  Found {len(entries)} version(s) from git")
+                else:
+                    print("  No version entries found in git history")
+            else:
+                print("Warning: not inside a git repository, skipping version table",
+                      file=sys.stderr)
+        except ImportError:
+            print("Warning: generate_version_table.py not found, skipping version table",
+                  file=sys.stderr)
+        except Exception as e:
+            print(f"Warning: failed to generate version table from git: {e}",
                   file=sys.stderr)
 
     # Write updated config

@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history + tags for version table
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -63,6 +65,7 @@ jobs:
             -e PDF_AUTHOR="Engineering Team" \
             -e PDF_COPYRIGHT="© 2026 MyCompany Inc." \
             -e VERSION_TABLE=/workspace/project/versions.yml \
+            -e VERSION_FROM_GIT=true \
             $IMAGE_TAG
 
       - name: Upload PDF Artifact

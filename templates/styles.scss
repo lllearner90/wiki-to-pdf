@@ -419,6 +419,17 @@ table.version-table tr:nth-child(2n) {
     background-color: #f6f8fa;
 }
 
+ul.version-changes {
+    margin: 0;
+    padding-left: 1.2em;
+    list-style-type: disc;
+}
+
+ul.version-changes li {
+    margin: 2px 0;
+    line-height: 1.4;
+}
+
 /* Chapter number styling */
 .chapter-number {
     font-size: 0.85em;

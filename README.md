@@ -47,6 +47,8 @@ You can customize the PDF using the following environment variables. If left emp
 | `PDF_COPYRIGHT` | *(from yaml)* | Copyright text |
 | `TOC_LEVEL` | *(from yaml)* | Heading depth in the Table of Contents |
 | `VERSION_TABLE` | *(empty)* | Path to a YAML/JSON file with version history entries |
+| `VERSION_FROM_GIT` | *(empty)* | Set to `true` to auto-generate version table from git tags/log |
+| `VERSION_EXCLUDE_PATTERN` | *(empty)* | Regex to exclude commits (e.g. `^Merge`) |
 
 ---
 
@@ -85,34 +87,74 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Generate the PDF based on your mkdocs.yml
-python build_pdf.py --config mkdocs.yml --output pdf/document.pdf
+python src/build_pdf.py --config mkdocs.yml --output pdf/document.pdf
 
 # Optionally copy external attachments
-python build_pdf.py --config mkdocs.yml --attachments-dir assets/images --output pdf/document.pdf
+python src/build_pdf.py --config mkdocs.yml --attachments-dir assets/images --output pdf/document.pdf
 
-# Include a version history table on the cover
-python build_pdf.py --config mkdocs.yml --version-table versions.yml --output pdf/document.pdf
+# Include a version history table from a YAML file
+python src/build_pdf.py --config mkdocs.yml --version-table versions.yml --output pdf/document.pdf
+
+# Auto-generate version history from git tags and commit log
+python src/build_pdf.py --config mkdocs.yml --version-from-git --output pdf/document.pdf
+
+# Auto-generate but exclude merge commits
+python src/build_pdf.py --version-from-git --version-exclude-pattern "^Merge" --output pdf/document.pdf
 ```
 
 ### Version Table
 
-You can include a **Version History** table in the generated PDF by providing a YAML file via `--version-table` (CLI) or the `VERSION_TABLE` environment variable (Docker).
+A **Version History** table appears on a dedicated page after the cover. There are two ways to populate it:
 
-Create a `versions.yml` file:
+#### Option 1: Manual YAML file (`--version-table`)
+
+Provide a YAML file via `--version-table` (CLI) or the `VERSION_TABLE` environment variable (Docker).
 
 ```yaml
 versions:
   - version: "1.0.0"
     date: "2026-04-30"
     author: "Jane Doe"
-    changes: "Initial release."
+    changes: "Initial release."       # string
   - version: "0.9.0"
     date: "2026-04-01"
     author: "Jane Doe"
-    changes: "Added Docker support."
+    changes:                            # or a list of bullet points
+      - Added Docker support
+      - CI/CD integration
 ```
 
-The table will appear on a dedicated page right after the cover page, with columns for **Version**, **Date**, **Author**, and **Changes**.
+#### Option 2: Auto-generate from git (`--version-from-git`)
+
+Use git tags as version markers. Commits between consecutive tags are grouped under each version.
+
+```bash
+# Tag your releases
+git tag -a v1.0.0 -m "Stable release with Mermaid support"
+git tag -a v0.9.0 <sha> -m "Docker and CI/CD"
+git push --tags
+
+# Build with auto-generated version table
+python src/build_pdf.py --version-from-git --output pdf/document.pdf
+```
+
+| Scenario | Result |
+|---|---|
+| Tags exist with commits between them | Full version table grouped by tag |
+| Commits after latest tag | Shown under an "Unreleased" row |
+| No tags at all | Single "Unreleased" row with recent commits |
+| Not a git repo / `git` not installed | Warning printed, version table skipped |
+| `--version-table` also provided | Explicit file wins, `--version-from-git` ignored |
+
+The standalone generator script can also be used directly:
+
+```bash
+# Write to file
+python src/generate_version_table.py --output versions.yml
+
+# Print to stdout, exclude merge commits, cap at 10 per version
+python src/generate_version_table.py --max-commits 10 --exclude-pattern "^Merge"
+```
 
 ## How It Works
 

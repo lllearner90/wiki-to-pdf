@@ -52,7 +52,19 @@
                     <td>{{ entry.version | default('—') | e }}</td>
                     <td>{{ entry.date | default('—') | e }}</td>
                     <td>{{ entry.author | default('—') | e }}</td>
-                    <td>{{ entry.changes | default('—') | e }}</td>
+                    <td>
+                        {% if entry.changes is string %}
+                            {{ entry.changes | e }}
+                        {% elif entry.changes is iterable %}
+                            <ul class="version-changes">
+                            {% for change in entry.changes %}
+                                <li>{{ change | e }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
