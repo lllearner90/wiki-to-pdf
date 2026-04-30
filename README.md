@@ -46,6 +46,7 @@ You can customize the PDF using the following environment variables. If left emp
 | `PDF_AUTHOR` | *(from yaml)* | Author name at the bottom |
 | `PDF_COPYRIGHT` | *(from yaml)* | Copyright text |
 | `TOC_LEVEL` | *(from yaml)* | Heading depth in the Table of Contents |
+| `VERSION_TABLE` | *(empty)* | Path to a YAML/JSON file with version history entries |
 
 ---
 
@@ -88,7 +89,30 @@ python build_pdf.py --config mkdocs.yml --output pdf/document.pdf
 
 # Optionally copy external attachments
 python build_pdf.py --config mkdocs.yml --attachments-dir assets/images --output pdf/document.pdf
+
+# Include a version history table on the cover
+python build_pdf.py --config mkdocs.yml --version-table versions.yml --output pdf/document.pdf
 ```
+
+### Version Table
+
+You can include a **Version History** table in the generated PDF by providing a YAML file via `--version-table` (CLI) or the `VERSION_TABLE` environment variable (Docker).
+
+Create a `versions.yml` file:
+
+```yaml
+versions:
+  - version: "1.0.0"
+    date: "2026-04-30"
+    author: "Jane Doe"
+    changes: "Initial release."
+  - version: "0.9.0"
+    date: "2026-04-01"
+    author: "Jane Doe"
+    changes: "Added Docker support."
+```
+
+The table will appear on a dedicated page right after the cover page, with columns for **Version**, **Date**, **Author**, and **Changes**.
 
 ## How It Works
 

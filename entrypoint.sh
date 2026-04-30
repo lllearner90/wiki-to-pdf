@@ -14,7 +14,11 @@ set -euo pipefail
 #   PDF_AUTHOR       — author shown on cover            (default: "")
 #   PDF_COPYRIGHT    — copyright line on cover          (default: "")
 #   TOC_LEVEL        — table-of-contents depth 1-6      (default: "")
+#   VERSION_TABLE    — path to YAML/JSON version table  (default: "")
 # ============================================================================
+
+# Ensure native libs are discoverable in slim containers
+export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu:/usr/lib64:/usr/local/lib:${LD_LIBRARY_PATH:-}"
 
 CONFIG_FILE="${CONFIG_FILE:-/workspace/project/mkdocs.yml}"
 ATTACHMENTS_DIR="${ATTACHMENTS_DIR:-}"
@@ -30,6 +34,7 @@ echo " Title          : ${PDF_TITLE:-<from mkdocs.yml>}"
 echo " Subtitle       : ${PDF_SUBTITLE:-<from mkdocs.yml>}"
 echo " Author         : ${PDF_AUTHOR:-<from mkdocs.yml>}"
 echo " TOC level      : ${TOC_LEVEL:-<from mkdocs.yml>}"
+echo " Version table  : ${VERSION_TABLE:-<none>}"
 if [ -n "${ATTACHMENTS_DIR}" ]; then
 echo " Attachments    : ${ATTACHMENTS_DIR}"
 fi
@@ -72,6 +77,10 @@ fi
 
 if [ -n "${TOC_LEVEL:-}" ]; then
     CMD+=(--toc-level "${TOC_LEVEL}")
+fi
+
+if [ -n "${VERSION_TABLE:-}" ]; then
+    CMD+=(--version-table "${VERSION_TABLE}")
 fi
 
 # ---- Run the build script ---------------------------------------------------

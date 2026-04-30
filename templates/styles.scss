@@ -372,6 +372,53 @@ img {
     }
 }
 
+/* Version Table Page */
+.version-table-page {
+    page-break-before: always;
+    page-break-after: always;
+    padding-top: 40px;
+}
+
+.version-table-title {
+    font-size: 1.8em;
+    font-weight: 600;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #eaecef;
+    margin-bottom: 24px;
+    color: #24292e;
+}
+
+table.version-table {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+table.version-table th {
+    font-weight: 600;
+    padding: 8px 13px;
+    border: 1px solid #dfe2e5;
+    background-color: #f6f8fa;
+    text-align: left;
+}
+
+table.version-table td {
+    padding: 8px 13px;
+    border: 1px solid #dfe2e5;
+    vertical-align: top;
+}
+
+table.version-table tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+table.version-table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
 /* Chapter number styling */
 .chapter-number {
     font-size: 0.85em;

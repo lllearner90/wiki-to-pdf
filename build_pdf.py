@@ -17,12 +17,50 @@ Usage:
 import argparse
 import glob
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import yaml
+
+
+# ---------------------------------------------------------------------------
+# Native library path fix for WeasyPrint (Pango / GLib / Cairo)
+# ---------------------------------------------------------------------------
+
+def _ensure_native_lib_paths():
+    """Ensure the dynamic linker can find gobject / pango / cairo.
+
+    - macOS (local):  Add Homebrew lib dirs to DYLD_FALLBACK_LIBRARY_PATH.
+    - Linux (CI/Docker): Add common lib dirs to LD_LIBRARY_PATH when the
+      standard paths are not already searched (e.g. slim containers).
+    """
+    system = platform.system()
+
+    if system == 'Darwin':
+        env_var = 'DYLD_FALLBACK_LIBRARY_PATH'
+        candidates = ['/opt/homebrew/lib', '/usr/local/lib']
+    elif system == 'Linux':
+        env_var = 'LD_LIBRARY_PATH'
+        candidates = [
+            '/usr/lib/x86_64-linux-gnu',   # Debian / Ubuntu amd64
+            '/usr/lib/aarch64-linux-gnu',  # Debian / Ubuntu arm64
+            '/usr/lib64',                  # RHEL / Fedora
+            '/usr/local/lib',
+        ]
+    else:
+        return
+
+    current = os.environ.get(env_var, '')
+    additions = [p for p in candidates
+                 if os.path.isdir(p) and p not in current]
+    if additions:
+        new_value = ':'.join(additions + ([current] if current else []))
+        os.environ[env_var] = new_value
+
+_ensure_native_lib_paths()
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +185,8 @@ def main():
     parser.add_argument('--copyright', default=None, help='Override copyright line on cover page')
     parser.add_argument('--toc-level', type=int, default=None, help='Override table of contents heading depth')
     
+    parser.add_argument('--version-table', default=None,
+                        help='Path to a YAML/JSON file with version history entries for the PDF cover')
     parser.add_argument('--keep-temp', action='store_true',
                         help='Keep temporary working directory')
     args = parser.parse_args()
@@ -260,6 +300,30 @@ def main():
     if args.toc_level is not None:
         to_pdf_plugin['toc_level'] = args.toc_level
         to_pdf_plugin['ordered_chapter_level'] = args.toc_level
+
+    # 4b. Load version table data and inject into extra context
+    if 'extra' not in config:
+        config['extra'] = {}
+
+    version_table_file = args.version_table or os.environ.get('VERSION_TABLE')
+    if version_table_file:
+        vt_path = os.path.abspath(version_table_file)
+        if os.path.isfile(vt_path):
+            print(f"Loading version table from {vt_path}...")
+            with open(vt_path, 'r') as f:
+                vt_data = yaml.safe_load(f)
+            # Accept either {versions: [...]} or a bare list
+            if isinstance(vt_data, list):
+                config['extra']['version_table'] = vt_data
+            elif isinstance(vt_data, dict) and 'versions' in vt_data:
+                config['extra']['version_table'] = vt_data['versions']
+            else:
+                print(f"Warning: version table file has unexpected format. "
+                      f"Expected a list or dict with 'versions' key.",
+                      file=sys.stderr)
+        else:
+            print(f"Warning: Version table file not found: {vt_path}",
+                  file=sys.stderr)
 
     # Write updated config
     with open(temp_config_path, 'w') as f:

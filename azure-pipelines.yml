@@ -40,7 +40,7 @@ steps:
       mkdir -p $(OUTPUT_DIR)
       echo "Running PDF generation via Docker..."
       
-      docker run --rm         -v $(PROJECT_DIR):/workspace/project         -v $(OUTPUT_DIR):/workspace/output         -e OUTPUT_FILENAME=$(PDF_FILENAME)         -e PDF_TITLE="Project Architecture & API"         -e PDF_SUBTITLE="Confidential Technical Reference"         -e PDF_AUTHOR="Engineering Team"         -e PDF_COPYRIGHT="© 2026 MyCompany Inc."         $(containerRegistry)/$(imageRepository):latest
+      docker run --rm         -v $(PROJECT_DIR):/workspace/project         -v $(OUTPUT_DIR):/workspace/output         -e OUTPUT_FILENAME=$(PDF_FILENAME)         -e PDF_TITLE="Project Architecture & API"         -e PDF_SUBTITLE="Confidential Technical Reference"         -e PDF_AUTHOR="Engineering Team"         -e PDF_COPYRIGHT="© 2026 MyCompany Inc."         -e VERSION_TABLE=/workspace/project/versions.yml         $(containerRegistry)/$(imageRepository):latest
     displayName: 'Generate PDF from Markdown'
 
   - task: PublishPipelineArtifact@1

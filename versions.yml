@@ -1,0 +1,13 @@
+versions:
+  - version: "1.0.0"
+    date: "2026-04-30"
+    author: "Amardeep Shetty"
+    changes: "Initial release with Mermaid support, cover page, and TOC."
+  - version: "0.9.0"
+    date: "2026-04-19"
+    author: "Amardeep Shetty"
+    changes: "Added Docker support, CI/CD integration, and custom templates."
+  - version: "0.1.0"
+    date: "2026-03-15"
+    author: "Amardeep Shetty"
+    changes: "Initial proof of concept — basic Markdown to PDF conversion."

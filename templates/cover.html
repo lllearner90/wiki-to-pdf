@@ -32,3 +32,31 @@
         </div>
     {% endif %}
 </article>
+
+{% if version_table is defined and version_table %}
+<article id="doc-version-table">
+    <div class="version-table-page">
+        <h2 class="version-table-title">Version History</h2>
+        <table class="version-table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Date</th>
+                    <th>Author</th>
+                    <th>Changes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in version_table %}
+                <tr>
+                    <td>{{ entry.version | default('—') | e }}</td>
+                    <td>{{ entry.date | default('—') | e }}</td>
+                    <td>{{ entry.author | default('—') | e }}</td>
+                    <td>{{ entry.changes | default('—') | e }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</article>
+{% endif %}

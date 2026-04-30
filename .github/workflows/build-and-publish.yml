@@ -62,6 +62,7 @@ jobs:
             -e PDF_SUBTITLE="Confidential Technical Reference" \
             -e PDF_AUTHOR="Engineering Team" \
             -e PDF_COPYRIGHT="© 2026 MyCompany Inc." \
+            -e VERSION_TABLE=/workspace/project/versions.yml \
             $IMAGE_TAG
 
       - name: Upload PDF Artifact
