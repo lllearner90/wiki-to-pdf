@@ -58,6 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     fonts-dejavu-core \
     chromium \
+    git \
     curl \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
@@ -86,7 +87,7 @@ COPY --from=builder /root/.puppeteerrc.json /root/.puppeteerrc.json
 # ---- Application code ----
 WORKDIR /workspace
 
-COPY build_pdf.py .
+COPY src/ src/
 COPY templates/ templates/
 COPY mkdocs.yml .
 
@@ -96,7 +97,7 @@ ENV INPUT_DIR=/workspace/docs
 ENV OUTPUT_DIR=/workspace/output
 ENV OUTPUT_FILENAME=document.pdf
 
-COPY entrypoint.sh /entrypoint.sh
+COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

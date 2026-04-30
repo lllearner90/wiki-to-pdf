@@ -15,6 +15,8 @@ set -euo pipefail
 #   PDF_COPYRIGHT    — copyright line on cover          (default: "")
 #   TOC_LEVEL        — table-of-contents depth 1-6      (default: "")
 #   VERSION_TABLE    — path to YAML/JSON version table  (default: "")
+#   VERSION_FROM_GIT — auto-generate from git tags/log  (default: "")
+#   VERSION_EXCLUDE_PATTERN — regex to exclude commits  (default: "")
 # ============================================================================
 
 # Ensure native libs are discoverable in slim containers
@@ -35,6 +37,7 @@ echo " Subtitle       : ${PDF_SUBTITLE:-<from mkdocs.yml>}"
 echo " Author         : ${PDF_AUTHOR:-<from mkdocs.yml>}"
 echo " TOC level      : ${TOC_LEVEL:-<from mkdocs.yml>}"
 echo " Version table  : ${VERSION_TABLE:-<none>}"
+echo " Version git    : ${VERSION_FROM_GIT:-<disabled>}"
 if [ -n "${ATTACHMENTS_DIR}" ]; then
 echo " Attachments    : ${ATTACHMENTS_DIR}"
 fi
@@ -51,7 +54,7 @@ fi
 mkdir -p "${OUTPUT_DIR}"
 
 # ---- Build the Python command -----------------------------------------------
-CMD=(python3 /workspace/build_pdf.py)
+CMD=(python3 /workspace/src/build_pdf.py)
 CMD+=(--config "${CONFIG_FILE}")
 CMD+=(--output "pdf/${OUTPUT_FILENAME}")
 
@@ -81,6 +84,14 @@ fi
 
 if [ -n "${VERSION_TABLE:-}" ]; then
     CMD+=(--version-table "${VERSION_TABLE}")
+fi
+
+if [ -n "${VERSION_FROM_GIT:-}" ]; then
+    CMD+=(--version-from-git)
+fi
+
+if [ -n "${VERSION_EXCLUDE_PATTERN:-}" ]; then
+    CMD+=(--version-exclude-pattern "${VERSION_EXCLUDE_PATTERN}")
 fi
 
 # ---- Run the build script ---------------------------------------------------
