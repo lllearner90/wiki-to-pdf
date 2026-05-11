@@ -244,28 +244,35 @@ li + li {
     margin-top: 0.25em;
 }
 
-/* Tables - GitHub style */
+/* Tables - GitHub style, constrained to page width */
 table {
     border-spacing: 0;
     border-collapse: collapse;
     margin-top: 0;
     margin-bottom: 16px;
-    width: auto;
-    overflow: auto;
+    width: 100%;
+    max-width: 100%;
     display: table;
-    font-size: 13px;
+    font-size: 12px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    table-layout: auto;
 }
 
 table th {
     font-weight: 600;
-    padding: 6px 13px;
+    padding: 5px 8px;
     border: 1px solid #dfe2e5;
     background-color: #f6f8fa;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 table td {
-    padding: 6px 13px;
+    padding: 5px 8px;
     border: 1px solid #dfe2e5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 table tr {
