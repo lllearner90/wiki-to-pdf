@@ -15,7 +15,9 @@ Usage:
 """
 
 import argparse
+import base64
 import glob
+import hashlib
 import os
 import platform
 import re
@@ -23,6 +25,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
+import urllib.error
+import ssl
 import yaml
 
 
@@ -68,11 +73,36 @@ _ensure_native_lib_paths()
 # ---------------------------------------------------------------------------
 
 def find_mermaid_blocks(content: str) -> list[tuple[int, int, str]]:
-    """Find all mermaid code blocks and return their positions and content."""
+    """Find all mermaid code blocks and return their positions and content.
+
+    Handles:
+    - ```mermaid ... ```  (standard fenced code blocks, 3+ backticks)
+    - :::mermaid ... :::  (MkDocs admonition style)
+    - Indented closing fences
+    - Blocks with extra whitespace or language specifiers
+    """
     blocks = []
-    pattern = re.compile(r'(```|:::)mermaid\s*\n(.*?)\n\1', re.DOTALL)
-    for match in pattern.finditer(content):
+
+    # Pattern for backtick-fenced mermaid blocks (3+ backticks)
+    # The opening fence must have at least 3 backticks followed by 'mermaid'
+    # The closing fence must have at least as many backticks (we match 3+)
+    backtick_pattern = re.compile(
+        r'^[ \t]*(```+)\s*mermaid\b[^\n]*\n(.*?)\n[ \t]*\1[ \t]*$',
+        re.DOTALL | re.MULTILINE
+    )
+    for match in backtick_pattern.finditer(content):
         blocks.append((match.start(), match.end(), match.group(2).strip()))
+
+    # Pattern for ::: style mermaid blocks
+    colon_pattern = re.compile(
+        r'^[ \t]*(:::)\s*mermaid\b[^\n]*\n(.*?)\n[ \t]*\1[ \t]*$',
+        re.DOTALL | re.MULTILINE
+    )
+    for match in colon_pattern.finditer(content):
+        blocks.append((match.start(), match.end(), match.group(2).strip()))
+
+    # Sort by position (in case both patterns match overlapping regions)
+    blocks.sort(key=lambda b: b[0])
     return blocks
 
 
@@ -146,9 +176,10 @@ def preprocess_markdown(src_path: str, img_dir: str) -> int:
             )
             rendered += 1
         else:
+            # Fallback: wrap in a plain code block so it doesn't render as
+            # raw mermaid source in the PDF
             replacement = (
-                f'```\nMermaid diagram could not be rendered\n\n'
-                f'{mermaid_code}\n```'
+                f'```\n{mermaid_code}\n```'
             )
 
         new_content = (
@@ -162,6 +193,195 @@ def preprocess_markdown(src_path: str, img_dir: str) -> int:
         f.write(new_content)
 
     return rendered
+
+
+# ---------------------------------------------------------------------------
+# Image helpers
+# ---------------------------------------------------------------------------
+
+# Mime-type lookup for data URIs
+_MIME_TYPES = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+    '.ico': 'image/x-icon',
+    '.tiff': 'image/tiff',
+    '.tif': 'image/tiff',
+}
+
+# Cache: url/path -> data URI  (avoids re-downloading / re-encoding)
+_data_uri_cache = {}
+
+
+def _download_image_bytes(url: str, timeout: int = 30) -> bytes | None:
+    """Download an image from a URL and return raw bytes, or None on failure."""
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'wiki-to-pdf/1.0',
+        })
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            return resp.read()
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError, ValueError) as e:
+        print(f"  Warning: Failed to download {url}: {e}", file=sys.stderr)
+        return None
+
+
+def _file_to_data_uri(file_path: str) -> str | None:
+    """Read a local image file and return a base64 data URI string."""
+    ext = os.path.splitext(file_path)[1].lower()
+    mime = _MIME_TYPES.get(ext)
+    if not mime:
+        # Try to guess from content
+        mime = 'image/png'
+
+    try:
+        with open(file_path, 'rb') as f:
+            data = f.read()
+        encoded = base64.b64encode(data).decode('ascii')
+        return f'data:{mime};base64,{encoded}'
+    except OSError as e:
+        print(f"  Warning: Could not read {file_path}: {e}", file=sys.stderr)
+        return None
+
+
+def _bytes_to_data_uri(data: bytes, url_or_path: str) -> str:
+    """Convert raw image bytes to a base64 data URI string."""
+    ext = os.path.splitext(url_or_path.split('?')[0].split('#')[0])[1].lower()
+    mime = _MIME_TYPES.get(ext, 'image/png')
+    encoded = base64.b64encode(data).decode('ascii')
+    return f'data:{mime};base64,{encoded}'
+
+
+def _resolve_local_image(url: str, file_dir: str, docs_dir: str) -> str | None:
+    """Try to find a local image file. Returns abs path or None."""
+    # Absolute path (e.g. /.attachments/image.png from a wiki)
+    if os.path.isabs(url):
+        rel_from_root = url.lstrip('/')
+        candidate = os.path.join(docs_dir, rel_from_root)
+        if os.path.isfile(candidate):
+            return candidate
+        decoded = urllib.request.url2pathname(rel_from_root)
+        candidate = os.path.join(docs_dir, decoded)
+        if os.path.isfile(candidate):
+            return candidate
+        return None
+
+    # Relative path — check from the markdown file's directory
+    resolved = os.path.normpath(os.path.join(file_dir, url))
+    if os.path.isfile(resolved):
+        return resolved
+
+    # Search the entire docs tree for the basename
+    basename = os.path.basename(url)
+    for root, _dirs, files in os.walk(docs_dir):
+        if basename in files:
+            return os.path.join(root, basename)
+
+    return None
+
+
+def preprocess_images(src_path: str, docs_dir: str, img_dir: str) -> int:
+    """Process a markdown file in place, embedding images as base64 data URIs.
+
+    This bypasses all path-resolution issues in the MkDocs / plugin / WeasyPrint
+    chain by making every image self-contained in the HTML.
+
+    Handles:
+    - Remote HTTP/HTTPS image URLs  -> downloaded and embedded as data URI
+    - Absolute wiki paths (/.attachments/) -> resolved and embedded
+    - Relative paths -> resolved and embedded
+    - Already-valid relative paths -> also embedded for reliability
+
+    Returns the number of images processed.
+    """
+    with open(src_path, 'r') as f:
+        content = f.read()
+
+    processed = 0
+    file_dir = os.path.dirname(src_path)
+
+    # Pattern 1: Markdown image syntax  ![alt](url "optional title")
+    md_img_pattern = re.compile(
+        r'(!\[[^\]]*\])\(\s*([^)\s]+)(?:\s+["\'][^"\']*["\'])?\s*\)'
+    )
+    # Pattern 2: HTML <img> tags with src attribute
+    html_img_pattern = re.compile(
+        r'(<img\s[^>]*?src\s*=\s*["\'])([^"\'>]+)(["\'][^>]*>)',
+        re.IGNORECASE
+    )
+
+    def resolve_image(match_url: str):
+        """Resolve an image URL/path to a data URI. Returns data URI or None."""
+        nonlocal processed
+        url = match_url.strip()
+
+        # Skip data URIs and anchors
+        if url.startswith('data:') or url.startswith('#'):
+            return None
+
+        # Check cache
+        if url in _data_uri_cache:
+            processed += 1
+            return _data_uri_cache[url]
+
+        data_uri = None
+
+        # Case 1: Remote HTTP/HTTPS URL -> download and embed
+        if url.startswith('http://') or url.startswith('https://'):
+            print(f"  Downloading: {url[:80]}...")
+            img_bytes = _download_image_bytes(url)
+            if img_bytes:
+                data_uri = _bytes_to_data_uri(img_bytes, url)
+
+        # Case 2 & 3: Local file (absolute or relative path)
+        else:
+            local_path = _resolve_local_image(url, file_dir, docs_dir)
+            if local_path:
+                data_uri = _file_to_data_uri(local_path)
+
+        if data_uri:
+            _data_uri_cache[url] = data_uri
+            processed += 1
+            return data_uri
+
+        if not url.startswith('http'):
+            print(f"  Warning: Image not found: {url} (referenced in {os.path.basename(src_path)})",
+                  file=sys.stderr)
+        return None
+
+    def replace_md_img(match):
+        alt_part = match.group(1)
+        url = match.group(2)
+        data_uri = resolve_image(url)
+        if data_uri:
+            return f'{alt_part}({data_uri})'
+        return match.group(0)
+
+    def replace_html_img(match):
+        prefix = match.group(1)
+        url = match.group(2)
+        suffix = match.group(3)
+        data_uri = resolve_image(url)
+        if data_uri:
+            return f'{prefix}{data_uri}{suffix}'
+        return match.group(0)
+
+    new_content = md_img_pattern.sub(replace_md_img, content)
+    new_content = html_img_pattern.sub(replace_html_img, new_content)
+
+    if new_content != content:
+        with open(src_path, 'w') as f:
+            f.write(new_content)
+
+    return processed
 
 
 # ---------------------------------------------------------------------------
@@ -250,16 +470,24 @@ def main():
             else:
                 print(f"Warning: Attachment directory not found: {att_path}", file=sys.stderr)
 
-    # 3. Pre-process Mermaid diagrams
-    print("\nPre-processing Mermaid diagrams...")
+    # 3. Pre-process images (download remote, fix paths)
+    print("\nPre-processing images...")
     md_files = glob.glob(os.path.join(temp_docs_dir, '**', '*.md'), recursive=True)
+    total_images = 0
+    for md_file in md_files:
+        count = preprocess_images(md_file, temp_docs_dir, img_dir)
+        total_images += count
+    print(f"Processed {total_images} image(s)")
+
+    # 4. Pre-process Mermaid diagrams
+    print("\nPre-processing Mermaid diagrams...")
     total_diagrams = 0
     for md_file in md_files:
         count = preprocess_markdown(md_file, img_dir)
         total_diagrams += count
     print(f"Rendered {total_diagrams} Mermaid diagram(s)")
 
-    # 4. Update mkdocs.yml with overrides
+    # 5. Update mkdocs.yml with overrides
     print("\nUpdating mkdocs.yml configuration...")
     config['docs_dir'] = 'docs'
     config['site_dir'] = 'site'
@@ -364,7 +592,7 @@ def main():
     with open(temp_config_path, 'w') as f:
         yaml.dump(config, f, sort_keys=False)
 
-    # 5. Find mkdocs binary (venv → global)
+    # 6. Find mkdocs binary (venv → global)
     print("\nBuilding PDF with mkdocs + to-pdf plugin...")
     venv_mkdocs = os.path.join(project_dir, '.venv', 'bin', 'mkdocs')
     if not os.path.exists(venv_mkdocs):
@@ -386,7 +614,7 @@ def main():
             shutil.rmtree(work_dir, ignore_errors=True)
         sys.exit(1)
 
-    # 6. Copy PDF to final location
+    # 7. Copy PDF to final location
     generated_pdf = os.path.join(work_dir, 'site', args.output)
     if os.path.exists(generated_pdf):
         final_output = os.path.join(project_dir, args.output)
